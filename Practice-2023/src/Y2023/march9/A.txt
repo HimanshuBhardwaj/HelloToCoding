@@ -1,0 +1,102 @@
+package Y2023.march9;
+
+import java.util.List;
+
+/**
+ * @author Himanshu Bhardwaj
+ * @Date 3/9/2024
+ */
+public class A {
+}
+
+
+
+class FriendServiceImpl implements FriendServiceI {
+    int numF;
+    ParserServiceI parserService;
+    DSUI dsu;
+    public FriendServiceImpl(int n, ParserServiceI parserService) {
+        this.numF = n;
+        this.parserService = parserService;
+        this.dsu = new DSU(n); //factory is the ideal pattern here
+    }
+
+    public long latestConnectedTimestamp(List<String> actionRecord) {
+        List<Action> actions = parserService.parseListAction(actionRecord);
+
+        for (Action action: actions) {
+            dsu.addFriend(action.userA, action.userB);
+            if (dsu.numConnectedComponent()==1) {
+                return action.epoch;
+            }
+        }
+        return Long.MAX_VALUE;
+    }
+}
+
+class DSU implements DSUI {
+    int n;
+    long [] parent;
+
+    int size[];
+
+    int connectedComponents;
+
+    public DSU(int n) {
+        this.n = n;
+        parent = new long[n];
+        size = new int[n];
+        this.connectedComponents = n;
+
+        for (int i=0;i<n;i++) {
+            parent[i] = i;
+            size[i] = 1;
+        }
+    }
+
+    @Override
+    public void addFriend(long s, long d) {
+        long ps = findParent(s);
+        long pd = findParent(d);
+
+        if (ps == pd) {
+            return;
+        }
+
+        parent[(int)ps]=pd;
+        connectedComponents--;
+    }
+
+    long findParent(long u) {
+        if (u == parent[(int)u]) {
+            return u;
+        }
+
+        return findParent(parent[(int)u]);
+    }
+
+    @Override
+    public int numConnectedComponent() {
+        return connectedComponents;
+    }
+}
+
+interface DSUI {
+    void  addFriend(long s, long d);
+    int numConnectedComponent();
+}
+
+interface FriendServiceI {
+    long latestConnectedTimestamp(List<String> actionRecord);
+}
+
+// this will take input as dictionary
+interface ParserServiceI {
+    List<Action> parseListAction(List<String> actionRecord);
+}
+
+class Action {
+    long userA;
+    long userB;
+    long epoch;
+}
